@@ -121,3 +121,12 @@ the same WSL2 VM) — add to docker-compose.yml under `metashape`:
   confirmed via `registration accepted` in logs, then appears in Network Monitor.
 - If Agisoft releases a version-compatible update to the geoGOCE cluster
   later, this container becomes unnecessary — native local node can be used.
+## Without Docker (Debian/Ubuntu host)
+`sudo ./scripts/setup.sh [latest|2.1.3]` runs the same steps as the dockerfile
+directly on the machine: installs the libraries, downloads Metashape to
+`/opt/metashape`, links `metashape` into the PATH and installs
+`license/license.lic`. Then start a node with:
+
+    MODE=node METASHAPE_HOST=<server-ip> METASHAPE_ROOT=/path/to/shared/ ./entrypoint.sh
+
+The NVIDIA driver must already be installed on the host.

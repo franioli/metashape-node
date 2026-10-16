@@ -51,7 +51,8 @@ RUN set -e; \
     V="${METASHAPE_VERSION}"; \
     PAGE=$(wget -qO- https://www.agisoft.com/downloads/installer/); \
     if [ "$V" = "latest" ]; then PATTERN='[0-9.]+'; else PATTERN=$(echo "$V" | sed 's/\./\\./g'); fi; \
-    WHEEL=$(echo "$PAGE" | grep -oE "Metashape-${PATTERN}-[A-Za-z0-9._]+-linux_x86_64\.whl" | sort -uV | tail -n1); \
+    WHEEL=$(echo "$PAGE" | grep -oiE "metashape-${PATTERN}-[A-Za-z0-9._-]+-linux_x86_64\.whl" \
+        | awk '{print tolower($0), $0}' | sort -uV | tail -n1 | cut -d" " -f2); \
     [ -n "$WHEEL" ] || { echo "Could not find Metashape Python wheel for $V"; exit 1; }; \
     echo "Installing $WHEEL"; \
     wget -O "/tmp/$WHEEL" "https://download.agisoft.com/$WHEEL"; \

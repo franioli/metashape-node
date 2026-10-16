@@ -58,7 +58,8 @@ ln -sf "$INSTALL_DIR/metashape" /usr/local/bin/metashape
 apt-get install -y --no-install-recommends python3 python3-venv python3-pip
 if [ "$VERSION" = "latest" ]; then PATTERN='[0-9.]+'; else PATTERN="${VERSION//./\\.}"; fi
 WHEEL=$(wget -qO- https://www.agisoft.com/downloads/installer/ \
-    | grep -oE "Metashape-${PATTERN}-[A-Za-z0-9._]+-linux_x86_64\.whl" | sort -uV | tail -n1)
+    | grep -oiE "metashape-${PATTERN}-[A-Za-z0-9._-]+-linux_x86_64\.whl" \
+    | awk '{print tolower($0), $0}' | sort -uV | tail -n1 | cut -d" " -f2)
 [ -n "$WHEEL" ] || { echo "Could not find Metashape Python wheel for $VERSION"; exit 1; }
 echo "Installing $WHEEL into $VENV_DIR"
 wget -O "/tmp/$WHEEL" "https://download.agisoft.com/$WHEEL"

@@ -1,0 +1,30 @@
+# All settings come from .env (see .env.example); defaults are shown below.
+services:
+  metashape:
+    build:
+      context: .
+      args:
+        # "latest" or a specific version, e.g. 2.1.3
+        METASHAPE_VERSION: ${METASHAPE_VERSION:-latest}
+    image: metashape:${METASHAPE_VERSION:-latest}
+    container_name: metashape-${MODE:-node}
+    restart: unless-stopped
+    # Keep a shell usable via `docker compose exec`
+    tty: true
+    stdin_open: true
+    environment:
+      MODE: ${MODE:-node}                    # node | standalone
+      METASHAPE_HOST: ${METASHAPE_HOST:-}    # server IP (node mode)
+      GPU_MASK: ${GPU_MASK:-}                # empty = all visible GPUs
+      CPU_ENABLE: ${CPU_ENABLE:-1}
+      NODE_PRIORITY: ${NODE_PRIORITY:-5}
+    volumes:
+      - "${WORKSPACE_PATH:-/mnt/p}:/workspace"
+      - "./license/license.lic:/var/tmp/agisoft/licensing/licenses/license.lic:ro"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: ${GPU_COUNT:-all}       # "all" or a number of GPUs
+              capabilities: [gpu, compute, utility]

@@ -9,8 +9,8 @@ services:
     image: metashape:${METASHAPE_VERSION:-latest}
     container_name: metashape-${MODE:-node}
     restart: unless-stopped
-    # Keep a shell usable via `docker compose exec`
-    tty: true
+    network_mode: host
+    tty: true    # Keep a shell usable via `docker compose exec`
     stdin_open: true
     environment:
       MODE: ${MODE:-node}                    # node | standalone

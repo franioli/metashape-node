@@ -41,10 +41,29 @@ RUN set -e; \
     tar -xzf /tmp/metashape.tar.gz -C /opt/metashape --strip-components=1; \
     rm /tmp/metashape.tar.gz
 
+# Python environment with the Metashape Python module (wheel from Agisoft, same
+# version as the application) in a venv at /opt/venv. The wheel is found on the
+# download page; "latest" picks the highest version listed.
+RUN set -e; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends python3 python3-venv python3-pip; \
+    rm -rf /var/lib/apt/lists/*; \
+    V="${METASHAPE_VERSION}"; \
+    PAGE=$(wget -qO- https://www.agisoft.com/downloads/installer/); \
+    if [ "$V" = "latest" ]; then PATTERN='[0-9.]+'; else PATTERN=$(echo "$V" | sed 's/\./\\./g'); fi; \
+    WHEEL=$(echo "$PAGE" | grep -oE "Metashape-${PATTERN}-[A-Za-z0-9._]+-linux_x86_64\.whl" | sort -uV | tail -n1); \
+    [ -n "$WHEEL" ] || { echo "Could not find Metashape Python wheel for $V"; exit 1; }; \
+    echo "Installing $WHEEL"; \
+    wget -O "/tmp/$WHEEL" "https://download.agisoft.com/$WHEEL"; \
+    python3 -m venv /opt/venv; \
+    /opt/venv/bin/pip install --no-cache-dir "/tmp/$WHEEL"; \
+    rm "/tmp/$WHEEL"
+
 WORKDIR /opt/metashape
 
 # `metashape` on PATH; Qt runs headless since there is no display in the container.
-ENV PATH="/opt/metashape:${PATH}" \
+# The venv is first on PATH, so `python` can `import Metashape`.
+ENV PATH="/opt/venv/bin:/opt/metashape:${PATH}" \
     QT_QPA_PLATFORM=offscreen
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

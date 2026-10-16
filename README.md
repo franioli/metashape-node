@@ -50,8 +50,18 @@ Metashape (with its bundled Python), `nvidia-smi` (injected by the toolkit),
 `clinfo`, `bash`, `nano`, `vim`, `less`, `htop`, `tmux`, `curl`, `wget`, `rsync`,
 `zip`/`unzip`, `ping`, `nc`, `dig`, `lspci`.
 
+## Python API
+A Python venv (`/opt/venv`, first on the PATH) has the `Metashape` module
+installed from Agisoft's wheel, matching `METASHAPE_VERSION`. Inside the
+container: `python my_script.py` (with `import Metashape`). The module uses the
+same license file as the application. Verify with
+`python -c "import Metashape; print(Metashape.version)"`.
+`metashape -r script.py` still works and uses its own bundled Python.
+On a host install, `scripts/setup.sh` creates the venv at `/opt/venv`
+(override with `VENV_DIR`); activate it with `source /opt/venv/bin/activate`.
+
 ## Files
-- `dockerfile` — Debian 12-slim, runtime deps, OpenCL, tools, Metashape download.
+- `dockerfile` — Debian 12-slim, runtime deps, OpenCL, tools, Metashape download, Python venv.
 - `entrypoint.sh` — starts node or standalone mode and works out the GPU mask.
 - `docker-compose.yml` — build, GPU, workspace and license wiring.
 - `.env.example` — settings template.

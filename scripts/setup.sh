@@ -5,11 +5,13 @@
 # Usage: sudo ./scripts/setup.sh [VERSION]
 #   VERSION  "latest" (default) or a specific version, e.g. 2.1.3
 #   INSTALL_DIR env var overrides the install location (default /opt/metashape)
+#   VENV_DIR env var overrides the Python venv location (default /opt/venv)
 #   LICENSE_FILE env var: path to a license.lic to install (default ./license/license.lic if present)
 set -euo pipefail
 
 VERSION="${1:-${METASHAPE_VERSION:-latest}}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/metashape}"
+VENV_DIR="${VENV_DIR:-/opt/venv}"
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 LICENSE_FILE="${LICENSE_FILE:-$REPO_DIR/license/license.lic}"
 
@@ -52,7 +54,19 @@ rm /tmp/metashape.tar.gz
 # 5. Put `metashape` on the PATH
 ln -sf "$INSTALL_DIR/metashape" /usr/local/bin/metashape
 
-# 6. License (network license file), if available
+# 6. Python environment with the Metashape Python module (same version)
+apt-get install -y --no-install-recommends python3 python3-venv python3-pip
+if [ "$VERSION" = "latest" ]; then PATTERN='[0-9.]+'; else PATTERN="${VERSION//./\\.}"; fi
+WHEEL=$(wget -qO- https://www.agisoft.com/downloads/installer/ \
+    | grep -oE "Metashape-${PATTERN}-[A-Za-z0-9._]+-linux_x86_64\.whl" | sort -uV | tail -n1)
+[ -n "$WHEEL" ] || { echo "Could not find Metashape Python wheel for $VERSION"; exit 1; }
+echo "Installing $WHEEL into $VENV_DIR"
+wget -O "/tmp/$WHEEL" "https://download.agisoft.com/$WHEEL"
+python3 -m venv "$VENV_DIR"
+"$VENV_DIR/bin/pip" install --no-cache-dir "/tmp/$WHEEL"
+rm "/tmp/$WHEEL"
+
+# 7. License (network license file), if available
 if [ -f "$LICENSE_FILE" ]; then
     mkdir -p /var/tmp/agisoft/licensing/licenses
     cp "$LICENSE_FILE" /var/tmp/agisoft/licensing/licenses/license.lic
@@ -65,3 +79,4 @@ echo
 echo "Done. Start a node with the same entrypoint used by Docker:"
 echo "  MODE=node METASHAPE_HOST=<server-ip> METASHAPE_ROOT=<shared-root>/ $REPO_DIR/entrypoint.sh"
 echo "Or run Metashape directly: metashape -platform offscreen -r script.py"
+echo "Python API: source $VENV_DIR/bin/activate && python -c 'import Metashape; print(Metashape.version)'"

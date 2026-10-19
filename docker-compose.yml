@@ -20,6 +20,9 @@ services:
       NODE_PRIORITY: ${NODE_PRIORITY:-5}
     volumes:
       - "${WORKSPACE_PATH:-/mnt/p}:/workspace"
+      # DEV ONLY: live-mount the workflow over the copy baked into the image.
+      # Remove this line for production so the image's own copy is used.
+      - "./workflow:/opt/workflow:ro"
       - "./license/license.lic:/var/tmp/agisoft/licensing/licenses/license.lic:ro"
     deploy:
       resources:

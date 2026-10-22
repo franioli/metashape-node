@@ -1,0 +1,72 @@
+# Settings for process.py  -  edit freely.
+# Priority (later wins): script defaults < this file < --preset < command line.
+# Every key is optional; relative paths are relative to the folder of the script.
+# Only [project] source is required; chunk defaults to the last chunk.
+# Check the result with:  run_processing.bat --print-config [--preset draft]
+
+[project]
+source             = "belvedere2026.psx"             # opened read-only, never modified
+processing_project = "belvedere2026_processing.psx"  # NEW project with ONLY the chunk below
+chunk              = "belvedere_2026_orientation_good"
+in_place           = false                           # true = process the source directly
+
+[run]
+steps = "depth,cloud,mesh,texture,dsm,ortho,export"   # or a subset, or "none" 
+force = false                                          # rebuild already built products
+
+[hardware]
+gpu = "nvidia"          # GPU name filter, "all" = every GPU (excludes the Intel iGPUs)
+# cpu_cores_inactive = 2
+
+[depth]
+downscale     = 2         # 1=Ultra 2=High 4=Medium 8=Low 16=Lowest
+filter        = "mild"    # none | mild | moderate | aggressive
+max_neighbors = 16        # neighbor photos per depth map: more = slower, cleaner
+
+[cloud]
+colors     = true
+confidence = true
+# uniform_sampling = true   # decimate the cloud to a regular spacing
+# points_spacing   = 0.1    # metres, used if uniform_sampling
+
+[mesh]
+surface    = "arbitrary"  # arbitrary | height_field
+face_count = "medium"       # low | medium | high
+# face_count_custom = 5000000   # exact face count, overrides face_count
+
+[texture]
+size  = 8192
+pages = 4
+
+[dem]
+resolution = 0.10          # metres per pixel, 0 = automatic
+# crs = "EPSG::32632"     # output CRS (default: the chunk CRS)
+
+[ortho]
+resolution = 0.005         # metres per pixel, 0 = automatic
+surface    = "dsm"        # dsm | mesh
+refine_seamlines = true  # hide visible joins between photos (slower)
+# crs = "EPSG::32632"     # output CRS (default: the chunk CRS)
+
+[export]
+folder = "output"
+cloud_format = "laz"      # laz | las | ply | e57 | xyz
+
+# ---------------------------------------------------------------------------
+# Presets: applied on top of the sections above with  --preset NAME
+# ---------------------------------------------------------------------------
+[presets.draft.depth]
+downscale = 8
+[presets.draft.mesh]
+face_count = "low"
+[presets.draft.texture]
+size = 4096
+[presets.draft.export]
+folder = "output_draft"
+
+[presets.final.depth]
+downscale = 1
+[presets.final.dem]
+resolution = 0.02
+[presets.final.ortho]
+resolution = 0.01

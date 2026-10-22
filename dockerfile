@@ -68,6 +68,10 @@ WORKDIR /opt/metashape
 ENV PATH="/opt/venv/bin:/opt/metashape:${PATH}" \
     QT_QPA_PLATFORM=offscreen
 
+# Workflow scripts, baked in for production. In dev, docker-compose.dev.yml
+# bind-mounts ./workflow over this folder so edits are live.
+COPY workflow /opt/workflow
+
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

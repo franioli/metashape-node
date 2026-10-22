@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxcb-xinerama0 libcurl4 libgl1 libglu1-mesa libgomp1 libglib2.0-0 \
     libfontconfig1 libfreetype6 \
     ocl-icd-libopencl1 clinfo \
+    fontconfig fonts-dejavu-core fonts-liberation \
     wget ca-certificates \
     bash-completion nano vim-tiny less htop tmux procps \
     curl rsync unzip zip iputils-ping netcat-openbsd dnsutils pciutils \

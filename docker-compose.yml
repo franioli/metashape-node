@@ -10,9 +10,11 @@ services:
     container_name: metashape-${MODE:-node}
     restart: unless-stopped
     network_mode: host
+    user: "${PUID:-1000}:${PGID:-1000}"
     tty: true    # Keep a shell usable via `docker compose exec`
     stdin_open: true
     environment:
+      HOME: /tmp/home                        # writable home for non-root
       MODE: ${MODE:-node}                    # node | standalone
       METASHAPE_HOST: ${METASHAPE_HOST:-}    # server IP (node mode)
       GPU_MASK: ${GPU_MASK:-}                # empty = all visible GPUs

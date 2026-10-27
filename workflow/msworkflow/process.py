@@ -144,6 +144,11 @@ def align_photos(doc, cfg):
     log(f"    {aligned}/{len(chunk.cameras)} cameras aligned")
 
 
+def count_tie_points(chunk):
+    """Number of valid tie points (removed ones stay in the list, flagged invalid)."""
+    return sum(pt.valid for pt in chunk.tie_points.points)
+
+
 def remove_tie_points(chunk, criterion, threshold):
     """Gradual selection: remove the tie points whose criterion is above threshold.
 
@@ -153,13 +158,17 @@ def remove_tie_points(chunk, criterion, threshold):
     if not threshold:
         return
     f = Metashape.TiePoints.Filter()
-    f.init(chunk, criterion=getattr(Metashape.TiePoints.Filter, criterion), progress=progress(criterion))
-    total = len(f.values)  # one value per tie point
-    removed = sum(v > threshold for v in f.values)
+    f.init(
+        chunk,
+        criterion=getattr(Metashape.TiePoints.Filter, criterion),
+        progress=progress(criterion),
+    )
+    before = count_tie_points(chunk)
     f.removePoints(threshold)
+    removed = before - count_tie_points(chunk)
     log(
         f"    {criterion} > {threshold} (max {f.max_value:.3g}): removed {removed:,} of "
-        f"{total:,} tie points ({removed / max(total, 1) * 100:.1f}%)"
+        f"{before:,} tie points ({removed / max(before, 1) * 100:.1f}%)"
     )
 
 

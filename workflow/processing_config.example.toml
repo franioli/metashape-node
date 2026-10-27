@@ -23,7 +23,7 @@ in_place           = false                     # true = process the source direc
 # steps to run: remove a name to skip it (each is also skipped if already built)
 # all: photos, align, optimize, depth, cloud, filter, mesh, texture, dsm, ortho, export
 # GCPs/CPs: run up to "align", place the markers in the GUI, then from "optimize" on.
-# The command line overrides it:  run mesh texture
+# `run --all` runs these steps; the command line overrides them:  run mesh texture
 # Step -> Metashape calls -> sections that configure it:
 #   photos   addPhotos                          [photos]
 #   align    matchPhotos + alignCameras         [matchPhotos] [alignCameras]

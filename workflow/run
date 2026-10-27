@@ -7,7 +7,8 @@
 # processing_config.example.toml in this folder); results go where it says.
 #
 # Usage (from the project folder, or with PROJECT_DIR set to it):
-#   run                       # the steps in [run] steps of processing_config.toml
+#   run                       # nothing is run: shows the help
+#   run --all                 # all the steps listed in [run] steps of processing_config.toml
 #   run mesh texture export   # only these steps
 #   run mesh --force          # rebuild the mesh even if it exists
 #   run --config other.toml
@@ -22,11 +23,16 @@ here="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 export PYTHONPATH="$here${PYTHONPATH:+:$PYTHONPATH}"
 export PYTHONUNBUFFERED=1  # log lines appear as they happen, also through tee
 
+# no arguments, or -h/--help: show the help and run nothing (not logged to run.log)
+py="${METASHAPE_PYTHON:-python}"
+if [[ $# -eq 0 ]]; then "$py" -m msworkflow --help; exit 2; fi
+for a in "$@"; do [[ $a == -h || $a == --help ]] && exec "$py" -m msworkflow --help; done
+
 cd "${PROJECT_DIR:-$PWD}"
 [[ -w . ]] || { echo "cannot write run.log in $PWD: cd to the project folder or set PROJECT_DIR" >&2; exit 2; }
 echo "=== $(date '+%F %T') run $* (in $PWD)" >> run.log
 
-"${METASHAPE_PYTHON:-python}" -m msworkflow "$@" 2>&1 | tee -a run.log
+"$py" -m msworkflow "$@" 2>&1 | tee -a run.log
 code=${PIPESTATUS[0]}
 echo "exit code: $code" | tee -a run.log
 exit "$code"

@@ -10,7 +10,8 @@ Settings: processing_config.toml in the project folder (values), config.py
 arguments.
 
 Command line, from the project folder (`run` is the launcher in the container):
-    run                                 # the steps in [run] steps
+    run                                 # nothing is run: shows this help
+    run --all                           # all the steps listed in [run] steps (or: run all)
     run mesh texture                    # only these steps (still in pipeline order)
     run mesh --force                    # rebuild the mesh even if it exists
     run --config other.toml
@@ -480,7 +481,12 @@ def main():
     parser.add_argument(
         "steps",
         nargs="*",
-        help=f"steps to run (default: [run] steps): {', '.join(STEPS)}",
+        help=f"steps to run: {', '.join(STEPS)}; or 'all' (same as --all)",
+    )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="run all the steps listed in [run] steps of the settings file",
     )
     parser.add_argument(
         "--force", action="store_true", help="rebuild products that already exist"
@@ -493,12 +499,20 @@ def main():
     )
     args = parser.parse_args()
 
+    explicit = [s for s in args.steps if s != "all"]
+    run_all = args.all or "all" in args.steps
+    if run_all and explicit:
+        parser.error("'all' / --all cannot be combined with explicit steps")
+    if not run_all and not explicit:  # nothing asked for: do not run anything
+        parser.print_help()
+        sys.exit(2)
+
     try:
         cfg = config.load(args.config)
     except (OSError, ValueError) as e:
         sys.exit(f"cannot load config: {e}")
-    if args.steps:
-        cfg.run.steps = tuple(args.steps)
+    if explicit:
+        cfg.run.steps = tuple(explicit)
     cfg.run.force = cfg.run.force or args.force
     bad = [s for s in cfg.run.steps if s not in STEPS]
     if bad:

@@ -69,7 +69,7 @@ Run it in tmux (standalone mode), so it survives an SSH disconnect:
     tmux new -As ms                      # create session "ms", or attach if it exists
     docker exec -it metashape-standalone bash        # starts in /workspace
     cd <project>                                     # unless WORKSPACE_PATH is the project itself
-    run                                  # the steps in [run] steps of the settings file
+    run --all                            # all the steps listed in [run] steps of the settings file
     run photos align optimize            # stop here to place GCPs in the GUI ...
     run depth cloud mesh texture dsm ortho export   # ... then continue
     run mesh texture export              # only these steps
@@ -91,7 +91,8 @@ A step can call several Metashape methods, each with its own settings section:
 | `dsm`, `ortho` | `buildDem`, `buildOrthomosaic` | `[buildDem]`, `[buildOrthomosaic]` |
 | `export` | `exportPointCloud`, `exportModel`, `exportRaster`, report | `[export]`, `[exportPointCloud]`, `[exportModel]`, `[exportRaster]` |
 
-`run --help` lists the command-line options and the valid steps. Every setting is
+`run` alone only shows the help, so nothing starts by accident; `run --all` (or `run all`)
+runs the steps of `[run] steps`. `run --help` lists the command-line options and the valid steps. Every setting is
 documented in `processing_config.example.toml` and listed with its default in
 `workflow/msworkflow/config.py`.
 

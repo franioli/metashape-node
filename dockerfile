@@ -73,8 +73,10 @@ WORKDIR /opt/metashape
 
 # `metashape` on PATH; Qt runs headless since there is no display in the container.
 # The venv is on PATH, so `python` can `import Metashape`; /opt/workflow is too, so
-# its scripts (run) can be called by name.
+# its scripts (run) can be called by name, and PYTHONPATH makes the msworkflow package
+# importable from any script or notebook.
 ENV PATH="/opt/workflow:/opt/venv/bin:/opt/metashape:${PATH}" \
+    PYTHONPATH=/opt/workflow \
     QT_QPA_PLATFORM=offscreen
 
 # Workflow scripts, baked in for production. In dev, docker-compose.dev.yml

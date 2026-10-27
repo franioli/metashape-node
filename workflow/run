@@ -1,26 +1,32 @@
 #!/usr/bin/env bash
-# Run a project's process.py inside the container: logs everything to run.log and
-# prints the exit code (0 = all done, 1 = a step failed, 130 = interrupted).
+# Run the Metashape workflow (the msworkflow package next to this script) on the
+# project in the current folder: logs everything to run.log and prints the exit
+# code (0 = all done, 1 = a step failed, 130 = interrupted).
 #
-# Usage (from the project folder, or with PROCESS_DIR set to it):
-#   run                       # the steps in [run] steps of the config file
+# A project folder holds processing_config.toml (start from
+# processing_config.example.toml in this folder); results go where it says.
+#
+# Usage (from the project folder, or with PROJECT_DIR set to it):
+#   run                       # the steps in [run] steps of processing_config.toml
 #   run mesh texture export   # only these steps
 #   run mesh --force          # rebuild the mesh even if it exists
 #   run --config other.toml
-# Arguments are passed to process.py unchanged (run --help lists them).
+# Arguments are passed on unchanged (run --help lists them).
 #
 # Environment:
-#   PROCESS_DIR       folder with process.py (default: the current folder)
+#   PROJECT_DIR       project folder (default: the current folder)
 #   METASHAPE_PYTHON  interpreter (default: python, i.e. the venv in /opt/venv)
 set -uo pipefail
 
-cd "${PROCESS_DIR:-$PWD}"
-[[ -f process.py ]] || { echo "no process.py in $PWD: cd to the project folder or set PROCESS_DIR" >&2; exit 2; }
-
+here="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+export PYTHONPATH="$here${PYTHONPATH:+:$PYTHONPATH}"
 export PYTHONUNBUFFERED=1  # log lines appear as they happen, also through tee
+
+cd "${PROJECT_DIR:-$PWD}"
+[[ -w . ]] || { echo "cannot write run.log in $PWD: cd to the project folder or set PROJECT_DIR" >&2; exit 2; }
 echo "=== $(date '+%F %T') run $* (in $PWD)" >> run.log
 
-"${METASHAPE_PYTHON:-python}" process.py "$@" 2>&1 | tee -a run.log
+"${METASHAPE_PYTHON:-python}" -m msworkflow "$@" 2>&1 | tee -a run.log
 code=${PIPESTATUS[0]}
 echo "exit code: $code" | tee -a run.log
 exit "$code"

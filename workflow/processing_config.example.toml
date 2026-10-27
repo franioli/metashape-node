@@ -1,0 +1,123 @@
+# Settings of a project for the msworkflow package (run / python -m msworkflow).
+# Copy this file to the project folder as processing_config.toml and edit it.
+# Every key is optional: a missing one keeps the default of msworkflow/config.py,
+# which lists every supported key. Relative paths are relative to this file.
+#
+# A section named like a Metashape Chunk method ([matchPhotos], [buildModel], ...)
+# holds keyword arguments of that method, with the same names: see the Metashape
+# Python API reference. Enum values are the enum name in snake_case without its
+# type suffix (MildFiltering -> "mild", PointCloudData -> "point_cloud").
+
+# ==========================================================================
+#  the workflow itself
+# ==========================================================================
+[project]
+# Existing project, opened read-only and never modified. Remove the line to start a
+# new project from [photos] folder instead (then run the photos and align steps).
+source             = "project.psx"
+processing_project = "project_processing.psx"  # NEW project with ONLY the chunk below
+# chunk              = "Name of the chunk"     # chunk to process (default: last chunk)
+in_place           = false                     # true = process the source directly
+
+[run]
+# steps to run: remove a name to skip it (each is also skipped if already built)
+# all: photos, align, optimize, depth, cloud, filter, mesh, texture, dsm, ortho, export
+# GCPs/CPs: run up to "align", place the markers in the GUI, then from "optimize" on.
+# The command line overrides it:  run mesh texture
+steps = ["depth", "cloud", "mesh", "texture", "export"]
+force = false                # rebuild already built products
+heartbeat_minutes = 5        # log RSS / free RAM every N minutes during a step (0 = off)
+
+[hardware]
+gpu = "nvidia"          # GPU name filter, "all" = every GPU
+# CPU cores left unused. Metashape plans RAM per thread: fewer threads = less RAM.
+# Applied through OMP_NUM_THREADS (Metashape has no Python setting for it).
+# inactive_cores = 20
+
+[photos]
+folder = "images"       # used by the photos step (only if the chunk has no photos yet)
+
+[gradual_selection]
+# optimize step: remove tie points above these TiePoints.Filter thresholds, 0 = off
+reconstruction_uncertainty = 0   # e.g. 50
+projection_accuracy        = 0   # e.g. 10
+reprojection_error         = 0   # pixels, e.g. 1 (applied after a first optimization)
+
+[confidence_filter]
+# filter step: remove dense cloud points with min_confidence <= confidence <= max_confidence.
+# Only matters for buildModel.source_data = "point_cloud". Check what it removes first.
+max_confidence = 1
+compact = false  # true = also purge them from disk (lighter project, IRREVERSIBLE)
+
+[export]
+folder = "output"         # also holds processing.log
+overwrite = false         # files that already exist are not exported again
+model_name = "model"
+
+# ==========================================================================
+#  Metashape Chunk methods
+# ==========================================================================
+[matchPhotos]
+downscale = 1                  # 0=Highest 1=High 2=Medium 4=Low 8=Lowest
+generic_preselection   = true  # pairs from downscaled images
+reference_preselection = true  # pairs from camera positions (needs GPS / reference)
+reference_preselection_mode = "source"  # source | estimated (re-matching) | sequential
+keypoint_limit = 40_000        # per image, 0 = unlimited
+tiepoint_limit = 4_000         # per image, 0 = unlimited
+filter_stationary_points = true  # drop points fixed in all images (e.g. fiducial marks)
+# filter_mask = true           # ignore masked areas (masks must be in the project)
+
+[optimizeCameras]
+# lens parameters to fit: fit_f fit_cx fit_cy fit_b1 fit_b2 fit_k1..fit_k4 fit_p1 fit_p2 fit_corrections
+fit_b1 = false
+fit_b2 = false
+fit_k4 = false
+
+[buildDepthMaps]
+downscale     = 2         # 1=Ultra 2=High 4=Medium 8=Low 16=Lowest
+filter_mode   = "mild"    # no | mild | moderate | aggressive
+max_neighbors = 16        # neighbor photos per depth map: more = slower, cleaner
+
+[buildPointCloud]
+point_colors     = true
+point_confidence = true   # needed by the filter step
+# uniform_sampling = true   # decimate the cloud to a regular spacing
+# points_spacing   = 0.1    # metres, used if uniform_sampling
+
+[buildModel]
+source_data       = "point_cloud"  # point_cloud | depth_maps
+surface_type      = "arbitrary"    # arbitrary | height_field
+face_count        = "custom"       # low | medium | high | custom
+face_count_custom = 5_000_000      # if face_count = "custom"
+vertex_colors     = false          # slow extra pass over all photos; the texture has the colour
+# if it runs out of memory: fewer faces, or hardware.inactive_cores higher
+
+[buildUV]
+texture_size = 8192
+page_count   = 4      # more pages = sharper over a large surface
+
+[buildTexture]
+texture_size  = 8192  # same as buildUV
+blending_mode = "mosaic"  # mosaic | natural | average | max | min | disabled
+
+[buildDem]
+source_data = "point_cloud"  # point_cloud | tie_points
+resolution  = 0              # metres per pixel, 0 = automatic
+# projection = "EPSG::32632"  # output CRS (default: the chunk CRS)
+
+[buildOrthomosaic]
+surface_data     = "elevation"  # elevation (DSM) | model (mesh)
+resolution       = 0            # metres per pixel, 0 = automatic
+refine_seamlines = false        # hide visible joins between photos (slower)
+# projection = "EPSG::32632"     # output CRS (default: the chunk CRS)
+
+[exportPointCloud]
+format = "laz"            # laz | las | ply | e57 | xyz (also the file extension)
+
+[exportModel]
+format = "obj"            # obj | ply | fbx | gltf  (OBJ + JPEG pages imports fine in Blender)
+texture_format = "jpeg"   # jpeg | png | tiff
+# Local origin [x0, y0, z0] in CRS units, subtracted from the mesh vertices (UTM is
+# too large for float32 in Blender). Default: region centre rounded to 100 m, written
+# to <model_name>_shift.json either way.
+# shift = [415900.0, 5089800.0, 2100.0]

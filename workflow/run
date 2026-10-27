@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Run a project's process.py inside the container: logs everything to run.log and
+# prints the exit code (0 = all done, 1 = a step failed, 130 = interrupted).
+#
+# Usage (from the project folder, or with PROCESS_DIR set to it):
+#   run                       # the steps in [run] steps of the config file
+#   run mesh texture export   # only these steps
+#   run mesh --force          # rebuild the mesh even if it exists
+#   run --config other.toml
+# Arguments are passed to process.py unchanged (run --help lists them).
+#
+# Environment:
+#   PROCESS_DIR       folder with process.py (default: the current folder)
+#   METASHAPE_PYTHON  interpreter (default: python, i.e. the venv in /opt/venv)
+set -uo pipefail
+
+cd "${PROCESS_DIR:-$PWD}"
+[[ -f process.py ]] || { echo "no process.py in $PWD: cd to the project folder or set PROCESS_DIR" >&2; exit 2; }
+
+export PYTHONUNBUFFERED=1  # log lines appear as they happen, also through tee
+echo "=== $(date '+%F %T') run $* (in $PWD)" >> run.log
+
+"${METASHAPE_PYTHON:-python}" process.py "$@" 2>&1 | tee -a run.log
+code=${PIPESTATUS[0]}
+echo "exit code: $code" | tee -a run.log
+exit "$code"

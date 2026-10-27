@@ -61,11 +61,20 @@ RUN set -e; \
     /opt/venv/bin/pip install --no-cache-dir "/tmp/$WHEEL"; \
     rm "/tmp/$WHEEL"
 
+# Named user for the UID/GID the container runs as (`user:` in docker-compose.yml, from
+# PUID/PGID in .env), so the shell prompt and `whoami` work instead of "I have no name!".
+# Its home is /tmp/home, the writable HOME set in docker-compose.yml.
+ARG PUID=1000
+ARG PGID=1000
+RUN groupadd -g "$PGID" metashape \
+    && useradd -u "$PUID" -g "$PGID" -M -d /tmp/home -s /bin/bash metashape
+
 WORKDIR /opt/metashape
 
 # `metashape` on PATH; Qt runs headless since there is no display in the container.
-# The venv is first on PATH, so `python` can `import Metashape`.
-ENV PATH="/opt/venv/bin:/opt/metashape:${PATH}" \
+# The venv is on PATH, so `python` can `import Metashape`; /opt/workflow is too, so
+# its scripts (run) can be called by name.
+ENV PATH="/opt/workflow:/opt/venv/bin:/opt/metashape:${PATH}" \
     QT_QPA_PLATFORM=offscreen
 
 # Workflow scripts, baked in for production. In dev, docker-compose.dev.yml

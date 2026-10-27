@@ -60,11 +60,69 @@ same license file as the application. Verify with
 On a host install, `scripts/setup.sh` creates the venv at `/opt/venv`
 (override with `VENV_DIR`); activate it with `source /opt/venv/bin/activate`.
 
+## Run a processing workflow (standalone mode, in tmux)
+For long runs on a remote machine. A project folder holds a `process.py`
+(plus its `config.py`, `helpers.py` and TOML settings file) and lives under
+`WORKSPACE_PATH`, i.e. under `/workspace` in the container. tmux keeps the run
+going when the SSH connection closes: start a session, open a shell in the
+container inside it, run the pipeline and detach.
+
+**1. Start (or reattach to) a tmux session on the host**
+
+    tmux new -s ms          # new session named "ms"
+    tmux attach -t ms       # reattach to it later (tmux ls lists the sessions)
+
+**2. In the session, open a shell in the container**
+
+    docker exec -it -w /workspace/<project> metashape-standalone bash
+
+`-w` is the project folder inside the container (the one with `process.py`). The
+container is named `metashape-<MODE>`, so `metashape-standalone` in this mode.
+`run` is on the PATH there: it runs `process.py` from the current
+folder, appends all output to `run.log` and prints the exit code at the end
+(0 = all done, 1 = a step failed, 130 = interrupted). From another folder, set
+`PROCESS_DIR=/workspace/<project>`.
+
+**3. Run what you need**
+
+    run                        # the steps in [run] steps of the settings file
+    run mesh texture export    # only these steps
+    run depth cloud filter mesh texture dsm ortho export   # whole dense part
+    run photos align           # from scratch: add photos and align, then stop
+                                          # to place the GCPs in the GUI ...
+    run optimize depth cloud mesh texture dsm ortho export   # ... and continue
+    run mesh --force           # rebuild the mesh even if it exists
+    run --config other.toml    # another settings file
+    run --help
+
+- Steps always run in pipeline order, whatever order they are typed in:
+  `photos align optimize depth cloud filter mesh texture dsm ortho export`.
+- A step whose product already exists is skipped (`--force` rebuilds it). A step
+  whose input is missing is skipped too, and the run ends with exit code 1.
+- Ctrl-c stops the run gracefully: the running step is cancelled and not saved,
+  earlier steps stay saved.
+
+**4. Detach and come back**
+- Detach: press **Ctrl-b**, release, then press **d**. The run keeps going.
+- Come back: `tmux attach -t ms`.
+- When finished: `exit` the container shell, then `exit` again to close the tmux
+  session (or `tmux kill-session -t ms` from outside).
+
+To try one step at a time, or to stop after a step, use the same code from a
+Python script or notebook (`import config`, `import process as p`, then
+`p.start(cfg)` and `p.run_step("mesh", doc, cfg)`; see the docstring of `process.py`).
+
+`run` comes from `workflow/` (mounted live at `/opt/workflow` and also
+copied into the image, which puts it on the PATH). The container runs as a user
+named `metashape` with the `PUID`/`PGID` of `.env`, so the shell prompt shows a
+name; changing those two needs a rebuild.
+
 ## Files
 - `dockerfile` — Debian 12-slim, runtime deps, OpenCL, tools, Metashape download, Python venv.
 - `entrypoint.sh` — starts node or standalone mode and works out the GPU mask.
 - `docker-compose.yml` — build, GPU, workspace and license wiring.
 - `.env.example` — settings template.
+- `workflow/` — scripts mounted at `/opt/workflow`; `run` is the launcher for `process.py`.
 - `license/license.lic` — network license file (points to the license server).
 
 ## Manage

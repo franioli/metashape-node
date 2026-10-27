@@ -128,7 +128,9 @@ class MatchPhotosCfg:
     tiepoint_limit: int = 4_000  # tie points per image (0 = unlimited)
     keep_keypoints: bool = True  # allows adding photos later without re-matching
     guided_matching: bool = False  # more matches on repetitive texture, slower
-    reset_matches: bool = False  # discard existing matches (e.g. with --force)
+    # discard the existing matches: keypoints are detected and matched again (redo the
+    # whole matching; use with --force on an aligned project)
+    reset_matches: bool = False
     subdivide_task: bool = True  # split in batches to limit memory use
     workitem_size_cameras: int = 20
     workitem_size_pairs: int = 80
@@ -138,7 +140,9 @@ class MatchPhotosCfg:
 @dataclass
 class AlignCamerasCfg:
     adaptive_fitting: bool = False  # fit more lens parameters when well constrained
-    reset_alignment: bool = False  # align all cameras again, not only the unaligned ones
+    # realign all cameras from the existing matches (does not detect or match again:
+    # that is matchPhotos.reset_matches); use with --force on an aligned project
+    reset_alignment: bool = False
     subdivide_task: bool = True
 
 

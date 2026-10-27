@@ -70,12 +70,26 @@ Run it in tmux (standalone mode), so it survives an SSH disconnect:
     docker exec -it metashape-standalone bash        # starts in /workspace
     cd <project>                                     # unless WORKSPACE_PATH is the project itself
     run                                  # the steps in [run] steps of the settings file
+    run photos align optimize            # stop here to place GCPs in the GUI ...
+    run depth cloud mesh texture dsm ortho export   # ... then continue
     run mesh texture export              # only these steps
-    run photos align                     # stop here to place GCPs in the GUI ...
-    run optimize depth cloud mesh texture dsm ortho export   # ... then continue
     run mesh --force                     # rebuild even if the product exists
     run --config other.toml              # other settings file
     run --help                           # all options and the list of steps
+
+A step can call several Metashape methods, each with its own settings section:
+
+| Step | Metashape calls | Settings sections |
+|---|---|---|
+| `photos` | `addPhotos` | `[photos]` |
+| `align` | `matchPhotos` (keypoints + matching), `alignCameras` | `[matchPhotos]`, `[alignCameras]` |
+| `optimize` | gradual selection, `optimizeCameras` | `[gradual_selection]`, `[optimizeCameras]` |
+| `depth`, `cloud` | `buildDepthMaps`, `buildPointCloud` | `[buildDepthMaps]`, `[buildPointCloud]` |
+| `filter` | confidence filter on the cloud | `[confidence_filter]` |
+| `mesh` | `buildModel` | `[buildModel]` |
+| `texture` | `buildUV`, `buildTexture` | `[buildUV]`, `[buildTexture]` |
+| `dsm`, `ortho` | `buildDem`, `buildOrthomosaic` | `[buildDem]`, `[buildOrthomosaic]` |
+| `export` | `exportPointCloud`, `exportModel`, `exportRaster`, report | `[export]`, `[exportPointCloud]`, `[exportModel]`, `[exportRaster]` |
 
 `run --help` lists the command-line options and the valid steps. Every setting is
 documented in `processing_config.example.toml` and listed with its default in

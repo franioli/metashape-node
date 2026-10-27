@@ -1,4 +1,3 @@
 {
-    "python.terminal.useEnvFile": true,
     "terminal.integrated.defaultProfile.linux": "bash"
 }

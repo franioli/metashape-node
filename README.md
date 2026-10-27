@@ -67,7 +67,8 @@ and must be under `WORKSPACE_PATH` (`/workspace` in the container):
 Run it in tmux (standalone mode), so it survives an SSH disconnect:
 
     tmux new -As ms                      # create session "ms", or attach if it exists
-    docker exec -it -w /workspace/<project> metashape-standalone bash
+    docker exec -it metashape-standalone bash        # starts in /workspace
+    cd <project>                                     # unless WORKSPACE_PATH is the project itself
     run                                  # the steps in [run] steps of the settings file
     run mesh texture export              # only these steps
     run photos align                     # stop here to place GCPs in the GUI ...
@@ -156,6 +157,7 @@ libs, discovered via `ldd`/`QT_DEBUG_PLUGINS=1` debugging:
 
 ## Debugging tips (if it breaks again after an update)
     docker compose run --rm metashape bash
+    cd /opt/metashape
     ldd ./metashape | grep "not found"                       # main binary
     ldd ./plugins/platforms/libqoffscreen.so | grep "not found"  # Qt plugin
     QT_DEBUG_PLUGINS=1 ./metashape -platform offscreen ...    # verbose Qt errors
